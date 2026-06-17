@@ -1,5 +1,3 @@
-"""Command-line entry point: run once, or watch on an interval."""
-
 import argparse
 import asyncio
 import sys
@@ -7,6 +5,9 @@ from pathlib import Path
 
 from .checker import check_all
 from .storage import init_db, save_results
+
+# TODO: add --format flag for json output (useful for piping)
+#       also maybe --silent for cron use
 
 
 def load_urls(path: str) -> list[str]:

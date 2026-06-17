@@ -1,5 +1,3 @@
-"""SQLite persistence for check results, via aiosqlite so writes don't block the loop."""
-
 import aiosqlite
 
 from .models import CheckResult
@@ -27,6 +25,7 @@ async def init_db(db_path: str = DB_PATH) -> None:
 
 
 async def save_results(results: list[CheckResult], db_path: str = DB_PATH) -> None:
+    # NOTE: using executemany for bulk insert, keep an eye on perf with 10k+ rows
     async with aiosqlite.connect(db_path) as db:
         await db.executemany(
             """INSERT INTO checks (url, status, latency_ms, ok, error, checked_at)
@@ -40,7 +39,6 @@ async def save_results(results: list[CheckResult], db_path: str = DB_PATH) -> No
 
 
 async def latest_results(db_path: str = DB_PATH) -> list[dict]:
-    """Most recent check per URL, useful for a dashboard's current-status view."""
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(

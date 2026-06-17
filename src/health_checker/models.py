@@ -1,14 +1,13 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from typing import Optional
 
 
 @dataclass
 class CheckResult:
-    """Outcome of a single health check against one URL."""
-
     url: str
-    status: int | str          # HTTP status code, or "error" if the request failed
-    latency_ms: float | None   # round-trip time in milliseconds, None if it errored
-    ok: bool                   # True if status < 400
-    error: str | None = None
+    status: int | str
+    latency_ms: float | None
+    ok: bool
+    error: Optional[str] = None          # TODO: consider using a dedicated exception type
     checked_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

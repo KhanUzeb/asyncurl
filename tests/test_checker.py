@@ -1,7 +1,3 @@
-"""Integration test: spin up a local aiohttp server with known-bad routes,
-then verify check_all reports the right status/ok/retry behavior against it.
-"""
-
 import asyncio
 
 import pytest
@@ -24,7 +20,6 @@ async def make_app():
         return web.Response(text="nope", status=500)
 
     async def flaky_handler(request):
-        # Fails the first time, succeeds on retry — exercises the backoff path.
         call_counts["flaky"] += 1
         if call_counts["flaky"] == 1:
             return web.Response(text="try again", status=503)
@@ -66,9 +61,8 @@ async def test_check_all_against_local_server():
         assert by_url[f"{base}/broken"].ok is False
         assert by_url[f"{base}/broken"].status == 500
 
-        # /flaky returns 503 once, then 200 — but check_one only retries on
-        # exceptions (timeouts/connection errors), not HTTP error codes, so
-        # this confirms that distinction rather than asserting a recovery.
+        # note: flaky returns 503 once then 200, but retry only catches
+        #       exceptions (timeouts, connection errors), not status codes
         assert by_url[f"{base}/flaky"].status in (200, 503)
 
     finally:
@@ -77,8 +71,6 @@ async def test_check_all_against_local_server():
 
 @pytest.mark.asyncio
 async def test_check_all_handles_connection_refused():
-    # Nothing is listening on this port, so this exercises the exception
-    # path and exponential backoff retries.
     results = await check_all(["http://127.0.0.1:9999/dead"], retries=1, timeout=1)
     result = results[0]
     assert result.ok is False
